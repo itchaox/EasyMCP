@@ -21,13 +21,6 @@
           <div class="panel-header">
             <h3>配置工作区</h3>
             <p class="panel-description">在此编辑和查看MCP完整配置</p>
-            <div
-              v-if="addedServerNames.length > 0"
-              class="added-notice"
-            >
-              <span>新增的服务器：</span>
-              <span class="added-servers">{{ addedServerNames.join(', ') }}</span>
-            </div>
           </div>
           <codemirror
             v-model="originalJson"
@@ -172,7 +165,7 @@
         original.mcpServers = {};
       }
 
-      // 记录新增的服务器名称
+      // 记录新增的服务器名称（为将来功能保留）
       addedServerNames.value = [];
 
       // 将新配置添加到原始配置中
@@ -319,30 +312,6 @@
     color: #666;
     margin-top: 8px;
     margin-bottom: 0;
-  }
-
-  .added-notice {
-    margin-top: 8px;
-    padding: 6px 10px;
-    background-color: rgba(16, 185, 129, 0.1);
-    border-radius: 4px;
-    font-size: 14px;
-    color: #555;
-    animation: highlight-fade 2s ease;
-  }
-
-  .added-servers {
-    color: #10b981;
-    font-weight: 600;
-  }
-
-  @keyframes highlight-fade {
-    0% {
-      background-color: rgba(16, 185, 129, 0.3);
-    }
-    100% {
-      background-color: rgba(16, 185, 129, 0.1);
-    }
   }
 
   /* 编辑器样式 */
