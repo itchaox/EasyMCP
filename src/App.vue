@@ -29,7 +29,7 @@
             :tab-size="2"
             placeholder="请输入MCP配置JSON"
             class="editor"
-            style="height: 100%"
+            style="height: calc(100% - 10px); margin-bottom: 10px"
           />
         </div>
 
@@ -45,7 +45,7 @@
             :tab-size="2"
             placeholder="请输入新增的JSON"
             class="editor"
-            style="height: 100%"
+            style="height: calc(100% - 10px); margin-bottom: 10px"
           />
         </div>
       </div>
@@ -264,7 +264,7 @@
     display: flex;
     gap: 24px;
     height: calc(100vh - 240px);
-    min-height: 400px;
+    min-height: 450px;
     margin-bottom: 24px;
     overflow: hidden;
   }
@@ -287,6 +287,7 @@
     overflow: hidden;
     transition: all 0.3s ease;
     position: relative;
+    padding-bottom: 10px;
   }
 
   .json-panel:hover {
@@ -334,6 +335,11 @@
     overflow: auto !important;
     padding: 8px 0;
     min-height: 300px;
+    padding-bottom: 40px;
+  }
+
+  :deep(.cm-content) {
+    padding-bottom: 40px;
   }
 
   :deep(.cm-gutters) {
