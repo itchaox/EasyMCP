@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 10:58
+ * @LastTime   : 2025-04-24 16:05
  * @desc       : 
 -->
 <template>
@@ -21,6 +21,28 @@
           <div class="panel-header">
             <h3>配置工作区</h3>
             <p class="panel-description">在此编辑和查看MCP完整配置</p>
+
+            <!-- 添加服务器选择器，使用Element-plus -->
+            <div
+              class="server-selector-container"
+              v-if="serverList.length > 0"
+            >
+              <span class="server-selector-label">服务器列表：</span>
+              <el-select
+                v-model="selectedServer"
+                filterable
+                placeholder="搜索服务器..."
+                class="server-select"
+                @change="selectServer"
+              >
+                <el-option
+                  v-for="server in serverList"
+                  :key="server"
+                  :label="server"
+                  :value="server"
+                />
+              </el-select>
+            </div>
           </div>
           <codemirror
             v-model="originalJson"
@@ -30,6 +52,7 @@
             placeholder="请输入MCP配置JSON"
             class="editor"
             style="height: calc(100% - 10px); margin-bottom: 10px"
+            ref="jsonEditor"
           />
         </div>
 
@@ -88,11 +111,13 @@
 
 <script setup>
   // 这是一个简单的Vue3组件，使用组合式API
-  import { ref, onMounted, computed } from 'vue';
+  import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
   import { Codemirror } from 'vue-codemirror';
   import { json } from '@codemirror/lang-json';
   import { oneDark } from '@codemirror/theme-one-dark';
   import { basicSetup } from 'codemirror';
+  // 引入Element-plus组件
+  import { ElSelect, ElOption } from 'element-plus';
 
   const originalJson = ref('');
   const newJson = ref('');
@@ -100,6 +125,8 @@
   const showMessage = ref(false);
   const messageType = ref('success');
   const addedServerNames = ref([]);
+  const serverList = ref([]);
+  const selectedServer = ref('');
 
   // 配置编辑器扩展
   const extensions = [basicSetup, json(), oneDark];
@@ -119,6 +146,76 @@
         ],
       },
     },
+  };
+
+  // 解析JSON获取服务器列表
+  const parseServerList = () => {
+    try {
+      const jsonObj = JSON.parse(originalJson.value);
+      if (jsonObj && jsonObj.mcpServers) {
+        serverList.value = Object.keys(jsonObj.mcpServers);
+      } else {
+        serverList.value = [];
+      }
+    } catch (error) {
+      console.error('解析JSON出错:', error);
+      serverList.value = [];
+    }
+  };
+
+  // 监听JSON变化，更新服务器列表
+  watch(originalJson, () => {
+    parseServerList();
+  });
+
+  // 选择服务器，高亮显示
+  const selectServer = (server) => {
+    if (!server) return;
+
+    // 尝试查找并滚动到选中服务器的位置
+    try {
+      const searchText = `"${server}"`;
+      const content = originalJson.value;
+      const index = content.indexOf(searchText);
+
+      if (index !== -1) {
+        // 计算行号（粗略估计）
+        const beforeText = content.substring(0, index);
+        const lineCount = beforeText.split('\n').length - 1;
+
+        // 获取编辑器元素并滚动
+        const editorEl = document.querySelector('.editor .cm-scroller');
+        if (editorEl) {
+          // 估计每行高度，滚动到大致位置
+          const lineHeight = 20; // 估计行高
+          const scrollPosition = lineCount * lineHeight;
+
+          // 滚动到位置
+          editorEl.scrollTop = scrollPosition;
+
+          // 添加闪烁高亮效果（可选）
+          setTimeout(() => {
+            // 尝试找到包含服务器名称的行
+            const lines = document.querySelectorAll('.editor .cm-line');
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].textContent.includes(searchText)) {
+                // 添加临时高亮类
+                lines[i].classList.add('highlight-line');
+
+                // 2秒后移除高亮
+                setTimeout(() => {
+                  lines[i].classList.remove('highlight-line');
+                }, 2000);
+
+                break;
+              }
+            }
+          }, 100);
+        }
+      }
+    } catch (error) {
+      console.error('滚动到服务器位置出错:', error);
+    }
   };
 
   // 显示消息提示
@@ -211,6 +308,14 @@
 
     // 清空已添加的服务器记录
     addedServerNames.value = [];
+
+    // 初始化解析服务器列表
+    parseServerList();
+  });
+
+  onUnmounted(() => {
+    // 移除事件监听
+    document.removeEventListener('click', closeDropdownOnClickOutside);
   });
 </script>
 
@@ -479,5 +584,39 @@
     font-size: 14px;
     background-color: white;
     border-top: 1px solid #eaeaea;
+  }
+
+  /* 服务器选择器样式 - 使用Element-plus */
+  .server-selector-container {
+    display: flex;
+    align-items: center;
+    margin: 12px 0;
+  }
+
+  .server-selector-label {
+    font-size: 14px;
+    color: #555;
+    margin-right: 8px;
+    font-weight: 500;
+  }
+
+  .server-select {
+    width: 240px;
+  }
+
+  /* 高亮样式 */
+  .highlight-line {
+    background-color: rgba(16, 185, 129, 0.2);
+    animation: flash-highlight 2s ease;
+  }
+
+  @keyframes flash-highlight {
+    0%,
+    100% {
+      background-color: rgba(16, 185, 129, 0.2);
+    }
+    50% {
+      background-color: rgba(16, 185, 129, 0.4);
+    }
   }
 </style>
