@@ -187,11 +187,13 @@
 
   :deep(.cm-gutters) {
     border-right: 1px solid rgba(0, 0, 0, 0.1);
-    background-color: #f9fafc;
+    background-color: #282c34;
+    color: #636d83;
   }
 
   :deep(.cm-activeLineGutter) {
-    background-color: rgba(75, 108, 183, 0.1);
+    background-color: #2c313a;
+    color: #adb7c9;
   }
 
   /* 底部样式 */
