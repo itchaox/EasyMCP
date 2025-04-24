@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 16:09
+ * @LastTime   : 2025-04-24 16:22
  * @desc       : 
 -->
 <template>
@@ -44,16 +44,45 @@
               </el-select>
             </div>
           </div>
-          <codemirror
-            v-model="originalJson"
-            :extensions="extensions"
-            :indent-with-tab="true"
-            :tab-size="2"
-            placeholder="请输入MCP配置JSON"
-            class="editor"
-            style="height: calc(100% - 10px); margin-bottom: 10px"
-            ref="jsonEditor"
-          />
+          <div class="editor-container">
+            <div
+              class="copy-icon"
+              @click="copyOriginalToClipboard"
+              title="复制到剪贴板"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect
+                  x="9"
+                  y="9"
+                  width="13"
+                  height="13"
+                  rx="2"
+                  ry="2"
+                ></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </div>
+            <codemirror
+              v-model="originalJson"
+              :extensions="extensions"
+              :indent-with-tab="true"
+              :tab-size="2"
+              placeholder="请输入MCP配置JSON"
+              class="editor"
+              style="height: calc(100% - 10px); margin-bottom: 10px"
+              ref="jsonEditor"
+            />
+          </div>
         </div>
 
         <div class="right-side">
@@ -62,15 +91,44 @@
               <h3>新增配置</h3>
               <p class="panel-description">请在此输入需要新增的服务器配置</p>
             </div>
-            <codemirror
-              v-model="newJson"
-              :extensions="extensions"
-              :indent-with-tab="true"
-              :tab-size="2"
-              placeholder="请输入新增的JSON"
-              class="editor"
-              style="height: calc(100% - 10px); margin-bottom: 10px"
-            />
+            <div class="editor-container">
+              <div
+                class="copy-icon"
+                @click="copyNewToClipboard"
+                title="复制到剪贴板"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <rect
+                    x="9"
+                    y="9"
+                    width="13"
+                    height="13"
+                    rx="2"
+                    ry="2"
+                  ></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </div>
+              <codemirror
+                v-model="newJson"
+                :extensions="extensions"
+                :indent-with-tab="true"
+                :tab-size="2"
+                placeholder="请输入新增的JSON"
+                class="editor"
+                style="height: calc(100% - 10px); margin-bottom: 10px"
+              />
+            </div>
           </div>
 
           <div class="button-container">
@@ -79,13 +137,6 @@
               @click="getMergedConfig"
             >
               合并配置
-            </button>
-            <button
-              v-if="addedServerNames.length > 0"
-              class="copy-btn"
-              @click="copyToClipboard"
-            >
-              复制到剪贴板
             </button>
           </div>
         </div>
@@ -232,12 +283,25 @@
     }, 3000);
   };
 
-  // 复制到剪贴板
-  const copyToClipboard = () => {
+  // 复制左侧编辑器内容到剪贴板
+  const copyOriginalToClipboard = () => {
     navigator.clipboard
       .writeText(originalJson.value)
       .then(() => {
         showMessageTip('配置已复制到剪贴板！');
+      })
+      .catch((err) => {
+        console.error('复制到剪贴板失败:', err);
+        showMessageTip('复制到剪贴板失败，请手动复制。', 'warning');
+      });
+  };
+
+  // 复制右侧编辑器内容到剪贴板
+  const copyNewToClipboard = () => {
+    navigator.clipboard
+      .writeText(newJson.value)
+      .then(() => {
+        showMessageTip('新增配置已复制到剪贴板！');
       })
       .catch((err) => {
         console.error('复制到剪贴板失败:', err);
@@ -441,6 +505,43 @@
     margin-bottom: 0;
   }
 
+  /* 编辑器容器样式 */
+  .editor-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* 复制图标样式 */
+  .copy-icon {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #4b6cb7;
+    z-index: 20;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+  }
+
+  .copy-icon:hover {
+    background-color: #4b6cb7;
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .copy-icon:active {
+    transform: scale(0.95);
+  }
+
   /* 编辑器样式 */
   .editor {
     flex: 1;
@@ -511,31 +612,6 @@
   }
 
   .get-config-btn:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-
-  /* 复制按钮样式 */
-  .copy-btn {
-    background-color: #10b981;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    animation: appear 0.3s ease;
-  }
-
-  .copy-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .copy-btn:active {
     transform: translateY(1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
