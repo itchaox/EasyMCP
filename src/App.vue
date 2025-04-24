@@ -45,6 +45,10 @@
           />
         </div>
       </div>
+
+      <div class="button-container">
+        <button class="get-config-btn">获取新配置</button>
+      </div>
     </main>
 
     <footer class="app-footer">
@@ -199,6 +203,36 @@
   /* 移除编辑器获得焦点时顶部的虚线 */
   :deep(.cm-editor.cm-focused) {
     outline: none !important;
+  }
+
+  /* 按钮容器样式 */
+  .button-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+  }
+
+  .get-config-btn {
+    background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  }
+
+  .get-config-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .get-config-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   /* 底部样式 */
