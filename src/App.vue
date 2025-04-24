@@ -19,8 +19,8 @@
       <div class="editors-container">
         <div class="json-panel">
           <div class="panel-header">
-            <h3>原始配置</h3>
-            <p class="panel-description">请在此粘贴您的原始MCP配置JSON</p>
+            <h3>配置工作区</h3>
+            <p class="panel-description">在此编辑和查看MCP完整配置</p>
             <div
               v-if="addedServerNames.length > 0"
               class="added-notice"
@@ -34,7 +34,7 @@
             :extensions="extensions"
             :indent-with-tab="true"
             :tab-size="2"
-            placeholder="请输入原来的JSON"
+            placeholder="请输入MCP配置JSON"
             class="editor"
           />
         </div>
