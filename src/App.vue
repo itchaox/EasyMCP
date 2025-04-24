@@ -19,7 +19,8 @@
       <div class="editors-container">
         <div class="json-panel">
           <div class="panel-header">
-            <h3>原来的 JSON</h3>
+            <h3>原始配置</h3>
+            <p class="panel-description">请在此粘贴您的原始MCP配置JSON</p>
           </div>
           <codemirror
             v-model="originalJson"
@@ -33,7 +34,8 @@
 
         <div class="json-panel">
           <div class="panel-header">
-            <h3>新增的 JSON</h3>
+            <h3>新增配置</h3>
+            <p class="panel-description">请在此输入需要新增的服务器配置</p>
           </div>
           <codemirror
             v-model="newJson"
@@ -51,8 +53,53 @@
           class="get-config-btn"
           @click="getMergedConfig"
         >
-          获取新配置
+          合并配置
         </button>
+      </div>
+
+      <!-- 合并结果对话框 -->
+      <div
+        class="modal-overlay"
+        v-if="showMergeResult"
+        @click="closeMergeResult"
+      >
+        <div
+          class="modal-container"
+          @click.stop
+        >
+          <div class="modal-header">
+            <h3>合并结果</h3>
+            <button
+              class="close-modal-btn"
+              @click="closeMergeResult"
+            >
+              ×
+            </button>
+          </div>
+          <div class="modal-content">
+            <p class="modal-description">新增的配置已成功合并，下方显示合并后的完整配置：</p>
+            <div class="merged-json-container">
+              <pre
+                class="merged-json"
+                v-html="highlightedJson"
+              ></pre>
+            </div>
+            <div class="modal-actions">
+              <button
+                class="copy-btn"
+                @click="copyToClipboard"
+              >
+                复制到剪贴板
+              </button>
+              <button
+                class="apply-btn"
+                @click="applyMergedConfig"
+              >
+                应用到原始配置
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 提示消息 -->
@@ -77,7 +124,7 @@
 
 <script setup>
   // 这是一个简单的Vue3组件，使用组合式API
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, computed } from 'vue';
   import { Codemirror } from 'vue-codemirror';
   import { json } from '@codemirror/lang-json';
   import { oneDark } from '@codemirror/theme-one-dark';
@@ -85,9 +132,12 @@
 
   const originalJson = ref('');
   const newJson = ref('');
+  const mergedJson = ref('');
   const message = ref('');
   const showMessage = ref(false);
   const messageType = ref('success');
+  const showMergeResult = ref(false);
+  const addedServerNames = ref([]);
 
   // 配置编辑器扩展
   const extensions = [basicSetup, json(), oneDark];
@@ -121,7 +171,89 @@
     }, 3000);
   };
 
-  // 合并JSON并复制到剪贴板
+  // 高亮显示JSON中新增的部分
+  const highlightedJson = computed(() => {
+    if (!mergedJson.value) return '';
+
+    try {
+      const jsonObj = JSON.parse(mergedJson.value);
+
+      // 将JSON转为格式化的字符串并添加高亮
+      const lines = JSON.stringify(jsonObj, null, 2).split('\n');
+      let result = '';
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        let highlighted = line;
+
+        // 检查是否包含新增的服务器名称
+        for (const serverName of addedServerNames.value) {
+          if (line.includes(`"${serverName}":`)) {
+            // 高亮整个服务器配置块
+            let j = i;
+            let braceCount = 0;
+            let foundOpening = false;
+
+            do {
+              const currentLine = lines[j];
+
+              if (currentLine.includes('{')) {
+                foundOpening = true;
+                braceCount += (currentLine.match(/{/g) || []).length;
+              }
+
+              if (currentLine.includes('}')) {
+                braceCount -= (currentLine.match(/}/g) || []).length;
+              }
+
+              if (foundOpening) {
+                lines[j] = `<span class="highlight-added">${lines[j]}</span>`;
+              }
+
+              j++;
+            } while (j < lines.length && (braceCount > 0 || !foundOpening));
+
+            highlighted = lines[i];
+            break;
+          }
+        }
+
+        result += highlighted + '\n';
+      }
+
+      return result;
+    } catch (e) {
+      console.error('高亮JSON出错:', e);
+      return mergedJson.value;
+    }
+  });
+
+  // 复制到剪贴板
+  const copyToClipboard = () => {
+    navigator.clipboard
+      .writeText(mergedJson.value)
+      .then(() => {
+        showMessageTip('配置已复制到剪贴板！');
+      })
+      .catch((err) => {
+        console.error('复制到剪贴板失败:', err);
+        showMessageTip('复制到剪贴板失败，请手动复制。', 'warning');
+      });
+  };
+
+  // 应用合并结果到原始配置区域
+  const applyMergedConfig = () => {
+    originalJson.value = mergedJson.value;
+    showMergeResult.value = false;
+    showMessageTip('已更新原始配置！');
+  };
+
+  // 关闭合并结果面板
+  const closeMergeResult = () => {
+    showMergeResult.value = false;
+  };
+
+  // 合并JSON并展示结果
   const getMergedConfig = () => {
     try {
       // 解析两个JSON
@@ -140,25 +272,24 @@
         original.mcpServers = {};
       }
 
+      // 记录新增的服务器名称，用于高亮显示
+      addedServerNames.value = [];
+
       // 将新配置添加到原始配置中
       for (const [serverName, serverConfig] of newServerEntries) {
         original.mcpServers[serverName] = serverConfig;
+        addedServerNames.value.push(serverName);
       }
 
-      // 格式化结果并保存回原始JSON
+      // 格式化结果并保存到合并结果
       const result = JSON.stringify(original, null, 2);
-      originalJson.value = result;
+      mergedJson.value = result;
 
-      // 复制到剪贴板
-      navigator.clipboard
-        .writeText(result)
-        .then(() => {
-          showMessageTip('配置已更新并复制到剪贴板！');
-        })
-        .catch((err) => {
-          console.error('复制到剪贴板失败:', err);
-          showMessageTip('配置已更新，但复制到剪贴板失败，请手动复制。', 'warning');
-        });
+      // 显示合并结果对话框
+      showMergeResult.value = true;
+
+      // 提示成功
+      showMessageTip('配置已成功合并！');
     } catch (error) {
       console.error('处理JSON时出错:', error);
       showMessageTip(`错误: ${error.message}`, 'error');
@@ -166,29 +297,28 @@
   };
 
   onMounted(() => {
-    // 为了演示，可以设置一些初始值
+    // 设置左侧原始配置示例
     originalJson.value = JSON.stringify(sampleJson, null, 2);
 
-    // 设置默认的新增JSON示例
-    newJson.value = JSON.stringify(
-      {
-        mcpServers: {
-          'mcp-server-new': {
-            command: 'npx',
-            args: [
-              '-y',
-              '@smithery/cli@latest',
-              'run',
-              '@wopal/mcp-server-new',
-              '--key',
-              '12345678-1234-1234-1234-123456789abc',
-            ],
-          },
+    // 设置新增JSON示例
+    const newServerExample = {
+      mcpServers: {
+        'mcp-server-new': {
+          command: 'npx',
+          args: [
+            '-y',
+            '@smithery/cli@latest',
+            'run',
+            '@wopal/mcp-server-new',
+            '--key',
+            '12345678-1234-1234-1234-123456789abc',
+          ],
         },
       },
-      null,
-      2,
-    );
+    };
+
+    // 设置右侧新增配置
+    newJson.value = JSON.stringify(newServerExample, null, 2);
   });
 </script>
 
@@ -238,7 +368,7 @@
   .editors-container {
     display: flex;
     gap: 24px;
-    height: calc(100vh - 180px);
+    height: calc(100vh - 300px);
     margin-bottom: 24px;
   }
 
@@ -277,6 +407,132 @@
     color: #333;
     font-size: 18px;
     font-weight: 600;
+  }
+
+  .panel-description {
+    font-size: 14px;
+    color: #666;
+    margin-top: 8px;
+    margin-bottom: 0;
+  }
+
+  /* 对话框样式 */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    animation: fade-in 0.2s ease;
+  }
+
+  .modal-container {
+    background-color: white;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 800px;
+    max-height: 90vh;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    animation: slide-up 0.3s ease;
+  }
+
+  .modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eaeaea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    color: #333;
+  }
+
+  .close-modal-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .close-modal-btn:hover {
+    color: #333;
+  }
+
+  .modal-content {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .modal-description {
+    margin-top: 0;
+    margin-bottom: 16px;
+    color: #555;
+  }
+
+  .merged-json-container {
+    background-color: #282c34;
+    border-radius: 6px;
+    padding: 16px;
+    overflow: auto;
+    max-height: 50vh;
+    margin-bottom: 20px;
+  }
+
+  .merged-json {
+    font-family: 'Fira Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #abb2bf;
+    margin: 0;
+    white-space: pre-wrap;
+    tab-size: 2;
+  }
+
+  .highlight-added {
+    background-color: rgba(80, 250, 123, 0.2);
+    color: #50fa7b;
+    display: inline-block;
+    width: 100%;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(20px);
+      opacity: 0.8;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   /* 编辑器样式 */
@@ -342,6 +598,37 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
+  /* 操作按钮共享样式 */
+  .copy-btn,
+  .apply-btn {
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .copy-btn {
+    background-color: #4b6cb7;
+    color: white;
+    border: none;
+  }
+
+  .copy-btn:hover {
+    background-color: #3b5998;
+  }
+
+  .apply-btn {
+    background-color: #10b981;
+    color: white;
+    border: none;
+  }
+
+  .apply-btn:hover {
+    background-color: #059669;
+  }
+
   /* 消息提示样式 */
   .message-container {
     position: fixed;
@@ -350,7 +637,7 @@
     right: 0;
     display: flex;
     justify-content: center;
-    z-index: 100;
+    z-index: 110;
   }
 
   .message-box {
