@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 00:28
+ * @LastTime   : 2025-04-24 10:58
  * @desc       : 
 -->
 <template>
@@ -47,7 +47,25 @@
       </div>
 
       <div class="button-container">
-        <button class="get-config-btn">获取新配置</button>
+        <button
+          class="get-config-btn"
+          @click="getMergedConfig"
+        >
+          获取新配置
+        </button>
+      </div>
+
+      <!-- 提示消息 -->
+      <div
+        class="message-container"
+        v-if="showMessage"
+      >
+        <div
+          class="message-box"
+          :class="messageType"
+        >
+          {{ message }}
+        </div>
       </div>
     </main>
 
@@ -67,21 +85,110 @@
 
   const originalJson = ref('');
   const newJson = ref('');
+  const message = ref('');
+  const showMessage = ref(false);
+  const messageType = ref('success');
 
   // 配置编辑器扩展
   const extensions = [basicSetup, json(), oneDark];
 
   // 示例JSON数据
   const sampleJson = {
-    name: 'EasyMCP',
-    version: '1.0.0',
-    description: 'JSON配置助手',
-    author: 'Wang Chao',
+    mcpServers: {
+      'mcp-server-hotnews': {
+        command: 'npx',
+        args: [
+          '-y',
+          '@smithery/cli@latest',
+          'run',
+          '@wopal/mcp-server-hotnews',
+          '--key',
+          '86f8c61b-8362-42ca-bd58-72d93b2b67ae',
+        ],
+      },
+    },
+  };
+
+  // 显示消息提示
+  const showMessageTip = (msg, type = 'success') => {
+    message.value = msg;
+    messageType.value = type;
+    showMessage.value = true;
+
+    // 3秒后自动隐藏消息
+    setTimeout(() => {
+      showMessage.value = false;
+    }, 3000);
+  };
+
+  // 合并JSON并复制到剪贴板
+  const getMergedConfig = () => {
+    try {
+      // 解析两个JSON
+      let original = JSON.parse(originalJson.value);
+      let newConfig = JSON.parse(newJson.value);
+
+      // 获取新配置的服务器名称和配置
+      const newServerEntries = Object.entries(newConfig.mcpServers || {});
+
+      if (newServerEntries.length === 0) {
+        throw new Error('新增JSON中没有找到有效的mcpServers配置');
+      }
+
+      // 确保原始JSON有mcpServers对象
+      if (!original.mcpServers) {
+        original.mcpServers = {};
+      }
+
+      // 将新配置添加到原始配置中
+      for (const [serverName, serverConfig] of newServerEntries) {
+        original.mcpServers[serverName] = serverConfig;
+      }
+
+      // 格式化结果并保存回原始JSON
+      const result = JSON.stringify(original, null, 2);
+      originalJson.value = result;
+
+      // 复制到剪贴板
+      navigator.clipboard
+        .writeText(result)
+        .then(() => {
+          showMessageTip('配置已更新并复制到剪贴板！');
+        })
+        .catch((err) => {
+          console.error('复制到剪贴板失败:', err);
+          showMessageTip('配置已更新，但复制到剪贴板失败，请手动复制。', 'warning');
+        });
+    } catch (error) {
+      console.error('处理JSON时出错:', error);
+      showMessageTip(`错误: ${error.message}`, 'error');
+    }
   };
 
   onMounted(() => {
     // 为了演示，可以设置一些初始值
     originalJson.value = JSON.stringify(sampleJson, null, 2);
+
+    // 设置默认的新增JSON示例
+    newJson.value = JSON.stringify(
+      {
+        mcpServers: {
+          'mcp-server-new': {
+            command: 'npx',
+            args: [
+              '-y',
+              '@smithery/cli@latest',
+              'run',
+              '@wopal/mcp-server-new',
+              '--key',
+              '12345678-1234-1234-1234-123456789abc',
+            ],
+          },
+        },
+      },
+      null,
+      2,
+    );
   });
 </script>
 
@@ -233,6 +340,52 @@
   .get-config-btn:active {
     transform: translateY(1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 消息提示样式 */
+  .message-container {
+    position: fixed;
+    top: 80px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  .message-box {
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: slide-down 0.3s ease;
+  }
+
+  .success {
+    background-color: #10b981;
+    color: white;
+  }
+
+  .warning {
+    background-color: #f59e0b;
+    color: white;
+  }
+
+  .error {
+    background-color: #ef4444;
+    color: white;
+  }
+
+  @keyframes slide-down {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
 
   /* 底部样式 */
