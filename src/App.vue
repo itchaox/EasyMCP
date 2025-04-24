@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 16:38
+ * @LastTime   : 2025-04-24 16:40
  * @desc       : 
 -->
 <template>
@@ -79,7 +79,6 @@
               :tab-size="2"
               placeholder="请输入MCP配置JSON"
               class="editor"
-              style="height: calc(100% - 10px); margin-bottom: 10px"
               ref="jsonEditor"
             />
           </div>
@@ -126,7 +125,6 @@
                 :tab-size="2"
                 placeholder="请输入新增的JSON"
                 class="editor"
-                style="height: calc(100% - 10px); margin-bottom: 10px"
               />
             </div>
           </div>
@@ -723,5 +721,9 @@
     50% {
       background-color: rgba(16, 185, 129, 0.4);
     }
+  }
+
+  .codemirror {
+    margin-bottom: 0 !important;
   }
 </style>
