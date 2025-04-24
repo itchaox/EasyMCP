@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 16:22
+ * @LastTime   : 2025-04-24 16:38
  * @desc       : 
 -->
 <template>
@@ -457,13 +457,14 @@
     overflow: hidden;
     transition: all 0.3s ease;
     position: relative;
-    padding-bottom: 10px;
   }
 
   /* 左侧面板样式 */
   .left-panel {
     flex: 3; /* 左侧面板占更多空间 */
     max-height: calc(100vh - 240px);
+    display: flex;
+    flex-direction: column;
   }
 
   /* 右侧整体样式 */
@@ -478,6 +479,8 @@
   .right-panel {
     flex: 1;
     max-height: calc(100vh - 340px); /* 比左侧面板矮一些，给按钮留出空间 */
+    display: flex;
+    flex-direction: column;
   }
 
   .json-panel:hover {
@@ -511,6 +514,8 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    overflow: hidden;
   }
 
   /* 复制图标样式 */
@@ -549,6 +554,9 @@
     font-family: 'Fira Code', 'Consolas', monospace;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    padding-bottom: 0;
+    margin-bottom: 0;
   }
 
   :deep(.cm-editor) {
@@ -562,11 +570,11 @@
     overflow: auto !important;
     padding: 8px 0;
     min-height: 300px;
-    padding-bottom: 40px;
+    padding-bottom: 0;
   }
 
   :deep(.cm-content) {
-    padding-bottom: 40px;
+    padding-bottom: 0;
   }
 
   :deep(.cm-gutters) {
