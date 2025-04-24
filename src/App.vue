@@ -196,6 +196,11 @@
     color: #adb7c9;
   }
 
+  /* 移除编辑器获得焦点时顶部的虚线 */
+  :deep(.cm-editor.cm-focused) {
+    outline: none !important;
+  }
+
   /* 底部样式 */
   .app-footer {
     padding: 16px 24px;
