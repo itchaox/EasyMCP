@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 16:40
+ * @LastTime   : 2025-04-24 19:15
  * @desc       : 
 -->
 <template>
@@ -22,26 +22,61 @@
             <h3>配置工作区</h3>
             <p class="panel-description">在此编辑和查看MCP完整配置</p>
 
-            <!-- 添加服务器选择器，使用Element-plus -->
+            <!-- 添加服务器选择器和删除功能 -->
             <div
-              class="server-selector-container"
+              class="server-manager-container"
               v-if="serverList.length > 0"
             >
-              <span class="server-selector-label">服务器列表：</span>
-              <el-select
-                v-model="selectedServer"
-                filterable
-                placeholder="搜索服务器..."
-                class="server-select"
-                @change="selectServer"
+              <div class="server-selector-container">
+                <span class="server-selector-label">服务器列表：</span>
+                <el-select
+                  v-model="selectedServer"
+                  filterable
+                  placeholder="搜索服务器..."
+                  class="server-select"
+                  @change="selectServer"
+                >
+                  <el-option
+                    v-for="server in serverList"
+                    :key="server"
+                    :label="server"
+                    :value="server"
+                  >
+                    <div class="server-option">
+                      <el-checkbox
+                        v-model="selectedServers"
+                        :label="server"
+                        @click.stop
+                      ></el-checkbox>
+                      <span>{{ server }}</span>
+                    </div>
+                  </el-option>
+                </el-select>
+              </div>
+
+              <el-button
+                type="danger"
+                class="delete-btn"
+                :disabled="selectedServers.length === 0"
+                @click="deleteSelectedServers"
               >
-                <el-option
-                  v-for="server in serverList"
-                  :key="server"
-                  :label="server"
-                  :value="server"
-                />
-              </el-select>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                </svg>
+                删除已选
+              </el-button>
             </div>
           </div>
           <div class="editor-container">
@@ -168,7 +203,7 @@
   import { oneDark } from '@codemirror/theme-one-dark';
   import { basicSetup } from 'codemirror';
   // 引入Element-plus组件
-  import { ElSelect, ElOption } from 'element-plus';
+  import { ElSelect, ElOption, ElCheckbox, ElButton } from 'element-plus';
 
   const originalJson = ref('');
   const newJson = ref('');
@@ -178,6 +213,7 @@
   const addedServerNames = ref([]);
   const serverList = ref([]);
   const selectedServer = ref('');
+  const selectedServers = ref([]);
 
   // 配置编辑器扩展
   const extensions = [basicSetup, json(), oneDark];
@@ -266,6 +302,45 @@
       }
     } catch (error) {
       console.error('滚动到服务器位置出错:', error);
+    }
+  };
+
+  // 删除选中的服务器
+  const deleteSelectedServers = () => {
+    try {
+      if (selectedServers.value.length === 0) {
+        return;
+      }
+
+      let jsonObj = JSON.parse(originalJson.value);
+
+      // 确保有mcpServers对象
+      if (!jsonObj.mcpServers) {
+        showMessageTip('未找到mcpServers配置', 'error');
+        return;
+      }
+
+      // 删除选中的服务器
+      selectedServers.value.forEach((server) => {
+        if (jsonObj.mcpServers[server]) {
+          delete jsonObj.mcpServers[server];
+        }
+      });
+
+      // 更新JSON
+      originalJson.value = JSON.stringify(jsonObj, null, 2);
+
+      // 清空选中状态
+      selectedServers.value = [];
+
+      // 提示成功
+      showMessageTip(`已删除 ${selectedServers.value.length} 个服务器配置`);
+
+      // 更新服务器列表
+      parseServerList();
+    } catch (error) {
+      console.error('删除服务器配置出错:', error);
+      showMessageTip(`删除失败: ${error.message}`, 'error');
     }
   };
 
@@ -506,6 +581,52 @@
     margin-bottom: 0;
   }
 
+  /* 服务器管理容器 */
+  .server-manager-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0;
+  }
+
+  /* 服务器选择器样式 */
+  .server-selector-container {
+    display: flex;
+    align-items: center;
+  }
+
+  .server-selector-label {
+    font-size: 14px;
+    color: #555;
+    margin-right: 8px;
+    font-weight: 500;
+  }
+
+  .server-select {
+    width: 240px;
+  }
+
+  /* 删除按钮样式 */
+  .delete-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    height: 36px;
+  }
+
+  .delete-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* 服务器选项样式 */
+  .server-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
   /* 编辑器容器样式 */
   .editor-container {
     position: relative;
@@ -687,24 +808,6 @@
     font-size: 14px;
     background-color: white;
     border-top: 1px solid #eaeaea;
-  }
-
-  /* 服务器选择器样式 - 使用Element-plus */
-  .server-selector-container {
-    display: flex;
-    align-items: center;
-    margin: 12px 0;
-  }
-
-  .server-selector-label {
-    font-size: 14px;
-    color: #555;
-    margin-right: 8px;
-    font-weight: 500;
-  }
-
-  .server-select {
-    width: 240px;
   }
 
   /* 高亮样式 */
