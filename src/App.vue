@@ -36,6 +36,7 @@
             :tab-size="2"
             placeholder="请输入MCP配置JSON"
             class="editor"
+            style="height: 100%"
           />
         </div>
 
@@ -51,6 +52,7 @@
             :tab-size="2"
             placeholder="请输入新增的JSON"
             class="editor"
+            style="height: 100%"
           />
         </div>
       </div>
@@ -225,8 +227,10 @@
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    height: 100vh;
     background-color: #f5f7fa;
     font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    overflow: hidden;
   }
 
   /* 头部样式 */
@@ -260,13 +264,16 @@
     padding: 24px;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
   }
 
   .editors-container {
     display: flex;
     gap: 24px;
     height: calc(100vh - 240px);
+    min-height: 400px;
     margin-bottom: 24px;
+    overflow: hidden;
   }
 
   @media (max-width: 768px) {
@@ -286,6 +293,7 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     overflow: hidden;
     transition: all 0.3s ease;
+    position: relative;
   }
 
   .json-panel:hover {
@@ -340,18 +348,23 @@
   /* 编辑器样式 */
   .editor {
     flex: 1;
-    overflow: hidden;
+    overflow: auto;
     font-family: 'Fira Code', 'Consolas', monospace;
+    display: flex;
+    flex-direction: column;
   }
 
   :deep(.cm-editor) {
     height: 100%;
+    flex: 1;
     font-size: 14px;
+    overflow: visible;
   }
 
   :deep(.cm-scroller) {
-    overflow: auto;
+    overflow: auto !important;
     padding: 8px 0;
+    min-height: 300px;
   }
 
   :deep(.cm-gutters) {
