@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 16:05
+ * @LastTime   : 2025-04-24 16:09
  * @desc       : 
 -->
 <template>
@@ -17,7 +17,7 @@
 
     <main class="main-content">
       <div class="editors-container">
-        <div class="json-panel">
+        <div class="json-panel left-panel">
           <div class="panel-header">
             <h3>配置工作区</h3>
             <p class="panel-description">在此编辑和查看MCP完整配置</p>
@@ -56,37 +56,39 @@
           />
         </div>
 
-        <div class="json-panel">
-          <div class="panel-header">
-            <h3>新增配置</h3>
-            <p class="panel-description">请在此输入需要新增的服务器配置</p>
+        <div class="right-side">
+          <div class="json-panel right-panel">
+            <div class="panel-header">
+              <h3>新增配置</h3>
+              <p class="panel-description">请在此输入需要新增的服务器配置</p>
+            </div>
+            <codemirror
+              v-model="newJson"
+              :extensions="extensions"
+              :indent-with-tab="true"
+              :tab-size="2"
+              placeholder="请输入新增的JSON"
+              class="editor"
+              style="height: calc(100% - 10px); margin-bottom: 10px"
+            />
           </div>
-          <codemirror
-            v-model="newJson"
-            :extensions="extensions"
-            :indent-with-tab="true"
-            :tab-size="2"
-            placeholder="请输入新增的JSON"
-            class="editor"
-            style="height: calc(100% - 10px); margin-bottom: 10px"
-          />
-        </div>
-      </div>
 
-      <div class="button-container">
-        <button
-          class="get-config-btn"
-          @click="getMergedConfig"
-        >
-          合并配置
-        </button>
-        <button
-          v-if="addedServerNames.length > 0"
-          class="copy-btn"
-          @click="copyToClipboard"
-        >
-          复制到剪贴板
-        </button>
+          <div class="button-container">
+            <button
+              class="get-config-btn"
+              @click="getMergedConfig"
+            >
+              合并配置
+            </button>
+            <button
+              v-if="addedServerNames.length > 0"
+              class="copy-btn"
+              @click="copyToClipboard"
+            >
+              复制到剪贴板
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 提示消息 -->
@@ -383,7 +385,6 @@
 
   /* JSON面板样式 */
   .json-panel {
-    flex: 1;
     display: flex;
     flex-direction: column;
     background-color: white;
@@ -393,6 +394,26 @@
     transition: all 0.3s ease;
     position: relative;
     padding-bottom: 10px;
+  }
+
+  /* 左侧面板样式 */
+  .left-panel {
+    flex: 3; /* 左侧面板占更多空间 */
+    max-height: calc(100vh - 240px);
+  }
+
+  /* 右侧整体样式 */
+  .right-side {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* 右侧面板样式 */
+  .right-panel {
+    flex: 1;
+    max-height: calc(100vh - 340px); /* 比左侧面板矮一些，给按钮留出空间 */
   }
 
   .json-panel:hover {
@@ -468,7 +489,7 @@
     display: flex;
     justify-content: center;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-top: 8px;
   }
 
   .get-config-btn {
