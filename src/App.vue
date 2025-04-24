@@ -77,12 +77,20 @@
             </button>
           </div>
           <div class="modal-content">
-            <p class="modal-description">新增的配置已成功合并，下方显示合并后的完整配置：</p>
+            <p class="modal-description">
+              新增配置已成功合并，下方显示合并后的完整配置。新增的服务器包括：<span class="added-servers">{{
+                addedServerNames.join(', ')
+              }}</span>
+            </p>
             <div class="merged-json-container">
-              <pre
-                class="merged-json"
-                v-html="highlightedJson"
-              ></pre>
+              <codemirror
+                v-model="mergedJson"
+                :extensions="extensions"
+                :indent-with-tab="true"
+                :tab-size="2"
+                class="editor result-editor"
+                readonly
+              />
             </div>
             <div class="modal-actions">
               <button
@@ -170,63 +178,6 @@
       showMessage.value = false;
     }, 3000);
   };
-
-  // 高亮显示JSON中新增的部分
-  const highlightedJson = computed(() => {
-    if (!mergedJson.value) return '';
-
-    try {
-      const jsonObj = JSON.parse(mergedJson.value);
-
-      // 将JSON转为格式化的字符串并添加高亮
-      const lines = JSON.stringify(jsonObj, null, 2).split('\n');
-      let result = '';
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        let highlighted = line;
-
-        // 检查是否包含新增的服务器名称
-        for (const serverName of addedServerNames.value) {
-          if (line.includes(`"${serverName}":`)) {
-            // 高亮整个服务器配置块
-            let j = i;
-            let braceCount = 0;
-            let foundOpening = false;
-
-            do {
-              const currentLine = lines[j];
-
-              if (currentLine.includes('{')) {
-                foundOpening = true;
-                braceCount += (currentLine.match(/{/g) || []).length;
-              }
-
-              if (currentLine.includes('}')) {
-                braceCount -= (currentLine.match(/}/g) || []).length;
-              }
-
-              if (foundOpening) {
-                lines[j] = `<span class="highlight-added">${lines[j]}</span>`;
-              }
-
-              j++;
-            } while (j < lines.length && (braceCount > 0 || !foundOpening));
-
-            highlighted = lines[i];
-            break;
-          }
-        }
-
-        result += highlighted + '\n';
-      }
-
-      return result;
-    } catch (e) {
-      console.error('高亮JSON出错:', e);
-      return mergedJson.value;
-    }
-  });
 
   // 复制到剪贴板
   const copyToClipboard = () => {
@@ -483,13 +434,22 @@
     color: #555;
   }
 
+  .added-servers {
+    color: #10b981;
+    font-weight: 600;
+  }
+
   .merged-json-container {
-    background-color: #282c34;
+    background-color: white;
     border-radius: 6px;
-    padding: 16px;
     overflow: auto;
-    max-height: 50vh;
+    height: 50vh;
+    border: 1px solid #eaeaea;
     margin-bottom: 20px;
+  }
+
+  .result-editor {
+    height: 100%;
   }
 
   .merged-json {
@@ -500,13 +460,6 @@
     margin: 0;
     white-space: pre-wrap;
     tab-size: 2;
-  }
-
-  .highlight-added {
-    background-color: rgba(80, 250, 123, 0.2);
-    color: #50fa7b;
-    display: inline-block;
-    width: 100%;
   }
 
   .modal-actions {
