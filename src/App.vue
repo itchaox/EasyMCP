@@ -3,7 +3,7 @@
  * @Author     : Wang Chao
  * @Date       : 2025-04-24 00:28
  * @LastAuthor : Wang Chao
- * @LastTime   : 2025-04-24 19:15
+ * @LastTime   : 2025-04-24 19:19
  * @desc       : 
 -->
 <template>
@@ -48,7 +48,6 @@
                         :label="server"
                         @click.stop
                       ></el-checkbox>
-                      <span>{{ server }}</span>
                     </div>
                   </el-option>
                 </el-select>
